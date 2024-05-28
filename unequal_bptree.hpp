@@ -1,24 +1,25 @@
-#ifndef BPT_HPP
-#define BPT_HPP
+#ifndef BPT_NEQ_HPP
+#define BPT_NEQ_HPP
+
+// This header is a unique version of BPT with only Key stored in the index.
 
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 #include <cassert>
-#include "vector.hpp"
 #include "file.hpp"
 #include "utils.hpp"
 
 namespace sjtu {
 template<class Key, class T, const int M = 100, const int L = 100>
-class BPTree {
+class BPTree_unique {
 private:
   int total;
   int root; // pos in f_i
   using Pair = std::pair<Key, T>;
 
   struct index_node {
-    Pair val[M];
+    Key val[M];
     int pos_index_node[M + 1]; // one more
     int cnt;
     bool isLeaf;
@@ -26,7 +27,7 @@ private:
       cnt = 0;
       isLeaf = true;
     }
-    int unequal_higher_bound(const Pair& origin) const { // find the one > origin
+    int unequal_higher_bound(const Key& origin) const { // find the one > origin
       if(cnt == 1) return pos_index_node[0];
       if(val[cnt - 2] <= origin) return pos_index_node[cnt - 1];
       int l = 0, r = cnt - 2;
@@ -37,7 +38,7 @@ private:
       }
       return pos_index_node[l];
     }
-    int higher_bound(const Pair& origin) const { // find the one >= origin
+    int higher_bound(const Key& origin) const { // find the one >= origin
       if(cnt == 1) return pos_index_node[0];
       if(val[cnt - 2] < origin) return pos_index_node[cnt - 1];
       int l = 0, r = cnt - 2;
@@ -48,7 +49,7 @@ private:
       }
       return pos_index_node[l];
     }
-    std::pair<int, int> higher_bound_pair(const Pair& origin) const { // find the one > origin
+    std::pair<int, int> higher_bound_pair(const Key& origin) const { // find the one > origin
       if(cnt == 1) return {pos_index_node[0], 0};
       if(val[cnt - 2] <= origin) return {pos_index_node[cnt - 1], cnt - 1};
       int l = 0, r = cnt - 2;
@@ -59,6 +60,7 @@ private:
       }
       return {pos_index_node[l], l};
     }
+    /*
     int higher_bound_by_key(const Key& origin) const { // find the one >= origin
       if(cnt == 1) return pos_index_node[0];
       if(val[cnt - 2].first < origin) return pos_index_node[cnt - 1];
@@ -70,7 +72,8 @@ private:
       }
       return pos_index_node[l];
     }
-    void insert_index(const Pair& dat, int pos, int k) {
+    */
+    void insert_index(const Key& dat, int pos, int k) {
       // pos_index_node[k] is splitted
       for(int i = cnt - 1; i > k; --i) {
         val[i] = val[i - 1];
@@ -106,6 +109,16 @@ private:
       }
       return l;
     }
+    int real_higher_bound_by_key(const Key& origin) const { // find the one >= origin
+      if(siz == 0 || val[siz - 1].first < origin) return siz;
+      int l = 0, r = siz - 1;
+      while(l < r) {
+        int m = (l + r) >> 1;
+        if(val[m].first < origin) l = m + 1;
+        else r = m;
+      }
+      return l;
+    }
     int higher_bound_by_key(const Key& origin) const { // find the one >= origin
       if(siz == 0 || val[siz - 1].first < origin) return -1; // Here specialized
       int l = 0, r = siz - 1;
@@ -118,8 +131,9 @@ private:
     }
     bool insert(const Pair& origin) {
       //siz < L
-      int hi_bound = higher_bound(origin);
-      if(hi_bound != siz && origin == val[hi_bound]) return false;
+      int hi_bound = real_higher_bound_by_key(origin.first);
+      if(hi_bound != siz && origin.first == val[hi_bound].first) return false;
+      // notice, no repetition guaranteed here
       for(int i = siz; i > hi_bound; --i) {
         val[i] = val[i - 1];
       }
@@ -143,7 +157,7 @@ private:
   File<val_node, 2> f_val;
 
 public:
-  explicit BPTree(const std::string &name_f_index, const std::string &name_f_val) 
+  explicit BPTree_unique(const std::string &name_f_index, const std::string &name_f_val) 
                                         : f_index(name_f_index), f_val(name_f_val) {
     //std::fstream file;
     //file.open(name_f_index, std::ios::in);
@@ -159,7 +173,7 @@ public:
     }
   }
 
-  ~BPTree() {
+  ~BPTree_unique() {
     f_index.write_info(total, 1);
     f_index.write_info(root, 2);
   }
@@ -168,43 +182,27 @@ public:
     index_node r;
     f_index.read(r, index_node_pos);
     if(r.isLeaf) {
-      return r.higher_bound_by_key(key);
+      return r.unequal_higher_bound(key);
     }
     else {
-      int nxt_pos = r.higher_bound_by_key(key);
+      int nxt_pos = r.unequal_higher_bound(key);
       return find_first(nxt_pos, key);
     }
   } // Notice, not necessarily find the one, maybe the preceding one.
-  vector<T> find(const Key &key) {
-    vector<T> ret;
-    if(root == -1) return ret;
+  std::pair<bool, T> find(const Key &key) {
+    if(root == -1) return {false, T()};
     int pos = find_first(root, key);
     val_node block;
     f_val.read(block, pos);
     int k = block.higher_bound_by_key(key);
 
-    if(k == -1) {
-      pos = block.nxt_pos;
-      if(pos == -1) return ret;
-      f_val.read(block, pos);
-      k = 0;
+    if(k == -1 || block.val[k].first != key) {
+      return {false, T()};
     }
-    while(block.val[k].first == key) {
-      if(block.siz != 0) ret.push_back(block.val[k].second);
-      if(k >= block.siz - 1) { // end of the block
-        pos = block.nxt_pos;
-        if(pos == -1) return ret;
-        f_val.read(block, pos);
-        k = 0;
-      }
-      else {
-        ++k;
-      }
-    }
-    return ret;
+    return {true, block.val[k].second};
   }
 
-  std::pair<bool, int> val_insert(const Pair& dat, int pos, Pair& ret, bool& isSuccess) {
+  std::pair<bool, int> val_insert(const Pair& dat, int pos, Key& ret, bool& isSuccess) {
     val_node cur;
     f_val.read(cur, pos);
     if(cur.siz == L) {
@@ -218,7 +216,7 @@ public:
       new_cur.siz = L/2;
       if(new_cur.val[0] <= dat) isSuccess = new_cur.insert(dat);
       else isSuccess = cur.insert(dat);
-      ret = new_cur.val[0];
+      ret = new_cur.val[0].first;
       int new_cur_pos = f_val.write(new_cur);
       cur.nxt_pos = new_cur_pos;
       f_val.update(cur, pos);
@@ -234,15 +232,15 @@ public:
     }
   }
   
-  std::pair<bool, int> insert_at(const Pair& dat, int index_pos, Pair& ret, bool& isSuccess) {
+  std::pair<bool, int> insert_at(const Pair& dat, int index_pos, Key& ret, bool& isSuccess) {
     // return value is status: whether splitted, where new block
     index_node cur;
     f_index.read(cur, index_pos);
 
-    std::pair<int, int> pos = cur.higher_bound_pair(dat);
+    std::pair<int, int> pos = cur.higher_bound_pair(dat.first);
 
     std::pair<bool, int> res;
-    Pair new_ret;
+    Key new_ret;
     if(cur.isLeaf) {
       res = val_insert(dat, pos.first, new_ret, isSuccess);
     }
@@ -298,17 +296,16 @@ public:
       root = f_index.write(i);
       return true;
     }
-    Pair ret;
+    Key ret;
     bool isSuccess = true;
     insert_at(dat, root, ret, isSuccess);
     return isSuccess;
   }
   std::pair<bool, int> erase_at(const Pair& dat, int index_pos, bool& isSuccess) {
     // first return value whether erased, second the ordinal of the deleted node
-    // void erase_at(const Pair& dat, int index_pos) {
     index_node r;
     f_index.read(r, index_pos);
-    std::pair<int, int> pos_right = r.higher_bound_pair(dat);
+    std::pair<int, int> pos_right = r.higher_bound_pair(dat.first);
     int pos_left = -1;
     if(pos_right.second > 0) pos_left = r.pos_index_node[pos_right.second - 1];
     if(r.isLeaf) {
@@ -394,14 +391,14 @@ public:
     if(r.isLeaf) {
       for(int i = 0; i < r.cnt - 1; ++i) {
         put(r.pos_index_node[i]);
-        std::cerr<<"Pivot is "<<r.val[i].first<<r.val[i].second<<std::endl;
+        std::cerr<<"Pivot is "<<r.val[i]<<std::endl;
       }
       put(r.pos_index_node[r.cnt - 1]);
     }
     else {
       for(int i = 0; i < r.cnt - 1; ++i) {
         traverse(r.pos_index_node[i]);
-        std::cerr<<"Pivot is "<<r.val[i].first<<r.val[i].second<<std::endl;
+        std::cerr<<"Pivot is "<<r.val[i]<<std::endl;
       }
       traverse(r.pos_index_node[r.cnt - 1]);
     }

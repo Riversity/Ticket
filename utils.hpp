@@ -17,38 +17,41 @@ namespace sjtu {
       strcpy(st, s);
     }
     Str(const std::string &s) {
-        strcpy(st, s.c_str());
+      strcpy(st, s.c_str());
     }
     char &operator[](int pos) {
-        return st[pos];
+      return st[pos];
     }
     Str &operator=(const Str &rhs) {
-        if(this == &rhs) return *this;
-        strcpy(st, rhs.st);
-        return *this;
+      if(this == &rhs) return *this;
+      strcpy(st, rhs.st);
+      return *this;
     }
     Str &operator=(const char *s) {
-        strcpy(st, s);
-        return *this;
+      strcpy(st, s);
+      return *this;
     }
     Str &operator=(const std::string &s) {
-        strcpy(st, s.c_str());
-        return *this;
+      strcpy(st, s.c_str());
+      return *this;
     }
     bool operator==(const Str &rhs) const {
-        return !strcmp(st, rhs.st);
+      return !strcmp(st, rhs.st);
     }
     bool operator!=(const Str &rhs) const {
-        return strcmp(st, rhs.st);
+      return strcmp(st, rhs.st);
     }
     bool operator<(const Str &rhs) const {
-        return strcmp(st, rhs.st) < 0;
+      return strcmp(st, rhs.st) < 0;
+    }
+    bool operator<=(const Str &rhs) const {
+      return strcmp(st, rhs.st) <= 0;
     }
     friend std::istream &operator>>(std::istream &is, Str &rhs) {
-        return is >> rhs.st;
+      return is >> rhs.st;
     }
     friend std::ostream &operator<<(std::ostream &os, const Str &rhs) {
-        return os << rhs.st;
+      return os << rhs.st;
     }
   };
 }

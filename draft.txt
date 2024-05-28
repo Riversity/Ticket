@@ -1,0 +1,17 @@
+用户系统：
+当前用户列表 线性表
+username -> user 的 无重复BPT
+
+火车系统：
+trainid -> trainpos 的 无重复BPT
+trainpos -> train 的 可变长线性表
+station -> trainid 的 BPT
+
+（hash待完善）
+
+票务系统：
+username -> order 的 BPT
+补票信息 的 线性表（内存）
+
+查询换乘：
+从起点站搜索所有车次，依次枚举经过的车站，并再次查询

@@ -2,17 +2,17 @@
 #include <cstdio>
 #include <string>
 
-#include "bptree.hpp"
+#include "unequal_bptree.hpp"
 
 int main() {
-  std::ios::sync_with_stdio(false);
-  std::cin.tie(nullptr);
-  std::cout.tie(nullptr);
+  //std::ios::sync_with_stdio(false);
+  //std::cin.tie(nullptr);
+  //std::cout.tie(nullptr);
   freopen("1.in", "r", stdin);
   freopen("1.out", "w", stdout);
   int n;
   std::cin >> n;
-  sjtu::BPTree<sjtu::Str<64>, int, 6, 6> bpt("index", "val");
+  sjtu::BPTree_unique<sjtu::Str<64>, int, 6, 6> bpt("index", "val");
   //bpt.test(500);
   for(int i = 0; i < n; ++i) {
     std::string cmd;
@@ -21,27 +21,24 @@ int main() {
     int val;
     if(cmd == "insert") {
       std::cin >> name >> val;
-      std::cerr << bpt.insert({name, val});
+      std::cout << bpt.insert({name, val});
     }
     else if(cmd == "delete") {
       std::cin >> name >> val;
-      std::cerr << bpt.erase({name, val});
+      std::cout << bpt.erase({name, val});
     }
     else if(cmd == "find") {
       std::cin >> name;
-      sjtu::vector<int> v = bpt.find(name);
-      if(v.empty()) {
+      std::pair<bool, int> v = bpt.find(name);
+      if(!v.first) {
         std::cout << "null\n";
       }
       else {
-        for(int i : v) {
-          std::cout << i << ' ';
-        }
-        std::cout << '\n';
+        std::cout << v.second << '\n';
       }
     }
   }
-  //bpt.traverse();
+  bpt.traverse();
   //fclose(stdin);
   //fclose(stdout);
   return 0;
