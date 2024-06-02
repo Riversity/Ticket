@@ -7,10 +7,12 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 #add_compile_options(-O3)
 
 add_executable(code
-              unequal_bpt_main.cpp
+              main.cpp
+              account.hpp
               unequal_bptree.hpp
 #              bpt_main.cpp
 #              bptree.hpp
+              vector.hpp
               exceptions.hpp
               file.hpp
               utils.hpp)

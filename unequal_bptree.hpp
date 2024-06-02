@@ -373,6 +373,10 @@ public:
     }
     return isSuccess;
   }
+  bool empty() const {
+    return root == -1;
+  }
+  /*
   void put(int pos) {
     val_node s;
     f_val.read(s, pos);
@@ -419,6 +423,7 @@ public:
       std::cout<<i<<std::endl;
     }
   }
+  */
 };
 
 }
