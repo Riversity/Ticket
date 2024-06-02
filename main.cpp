@@ -1,17 +1,18 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <sstream>
 
 #include "vector.hpp"
 #include "account.hpp"
 #include "utils.hpp"
 
 int main() {
-  //std::ios::sync_with_stdio(false);
-  //std::cin.tie(nullptr);
-  //std::cout.tie(nullptr);
-  freopen("1.in", "r", stdin);
-  freopen("1.out", "w", stdout);
+  std::ios::sync_with_stdio(false);
+  std::cin.tie(nullptr);
+  std::cout.tie(nullptr);
+  //freopen("1.in", "r", stdin);
+  //freopen("1.out", "w", stdout);
   sjtu::account acc;
   std::string timestamp, cmd;
   while(std::cin >> timestamp) {
